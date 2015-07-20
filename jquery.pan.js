@@ -58,6 +58,11 @@
 					}
 				}
 			},
+			//take a movement ratio and multiply by our speed to get a vector
+			setVector = function (moveRatio) {
+				continuous.moveX = settings.continuous.interval * moveRatio.x,
+				continuous.moveY = settings.continuous.interval * moveRatio.y;
+			},
 			refreshOffset = function () {
 				offset = toCoords(
 					Number(content.css('left').replace('px', '')) | 0,
@@ -138,20 +143,16 @@
 				if (!continuous.active) {
 					//determine movement directions based on key (left, up, right, down)
 					if (evt.which == 37 || evt.which == 65) {
-						continuous.moveX = -settings.continuous.interval;
-						continuous.moveY = 0;
+						setVector(toCoords(-1, 0));
 					}
 					else if (evt.which == 38 || evt.which == 87) {
-						continuous.moveX = 0;
-						continuous.moveY = -settings.continuous.interval;
+						setVector(toCoords(0, -1));
 					}
 					else if (evt.which == 39 || evt.which == 68) {
-						continuous.moveX = settings.continuous.interval;
-						continuous.moveY = 0;
+						setVector(toCoords(1, 0));
 					}
 					else if (evt.which == 40 || evt.which == 83) {
-						continuous.moveX = 0;
-						continuous.moveY = settings.continuous.interval;
+						setVector(toCoords(0, 1));
 					}
 					//refresh the offset before we start panning
 					refreshOffset();
@@ -173,8 +174,7 @@
 		*/
 		
 		this.on('buttondown', function(evt, moveX, moveY) {
-			continuous.moveX = settings.continuous.interval * moveX,
-			continuous.moveY = settings.continuous.interval * moveY;
+			setVector(toCoords(moveX, moveY));
 			//refresh the offset before we start panning
 			refreshOffset();
 			continuous.active = true;
