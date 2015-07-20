@@ -63,6 +63,19 @@
 				continuous.moveX = settings.continuous.interval * moveRatio.x,
 				continuous.moveY = settings.continuous.interval * moveRatio.y;
 			},
+			//take a direction (e.g. 'up' or 'right') and use it to set a vector
+			setDirection = function (d) {
+				var ratio;
+				if (d == 'up')
+					ratio = toCoords(0, -1);
+				if (d == 'right')
+					ratio = toCoords(1, 0);
+				if (d == 'down')
+					ratio = toCoords(0, 1);
+				if (d == 'left')
+					ratio = toCoords(-1, 0);
+				setVector(ratio);	
+			},
 			refreshOffset = function () {
 				offset = toCoords(
 					Number(content.css('left').replace('px', '')) | 0,
@@ -143,16 +156,16 @@
 				if (!continuous.active) {
 					//determine movement directions based on key (left, up, right, down)
 					if (evt.which == 37 || evt.which == 65) {
-						setVector(toCoords(-1, 0));
+						setDirection('left');
 					}
 					else if (evt.which == 38 || evt.which == 87) {
-						setVector(toCoords(0, -1));
+						setDirection('up');
 					}
 					else if (evt.which == 39 || evt.which == 68) {
-						setVector(toCoords(1, 0));
+						setDirection('right');
 					}
 					else if (evt.which == 40 || evt.which == 83) {
-						setVector(toCoords(0, 1));
+						setDirection('down')
 					}
 					//refresh the offset before we start panning
 					refreshOffset();
