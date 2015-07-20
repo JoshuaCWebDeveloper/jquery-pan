@@ -278,16 +278,14 @@
 			settings.$panContainer.trigger('buttonup');
 		});
 		
-		this.circleMouseEvents({
-			events: 'mousedown'
-		}).on('circle-mousedown', function (e, eOrig) {
+		this.on('mousedown', function (e) {
 			e.preventDefault();
 			//trigger the standard event on a safe element so that it still bubbles up
 			settings.$eventStarter.trigger('mousedown'); 
 			//if the target was not the center button or if center is disabled
 			if (!settings.center.enabled || e.target != settings.center.$button.get(0)) {
 				active = true;
-				move = determineMove(eOrig);
+				move = determineMove(e);
 				settings.$panContainer.trigger('buttondown', [move.x, move.y]);
 			}
 			else {
@@ -300,103 +298,6 @@
 		return this;
 	}
 	
-	//correctly interpret mouse events for circles
-	$.fn.circleMouseEvents = function (arg1) {
-		//create options
-		var options = (typeof arg1 == 'object' && arg1 !== null) ? arg1 : {},
-			$circle = this,
-			settings = $.extend(true, {
-				$behindElement: this.parent(),
-				borderWidth: 1,
-				events: 'mouseover mouseenter mouseout mouseleave mousedown mouseup mousemove',
-				eventPrefix: 'circle-'
-			}, options),
-			mouseHover = false,
-			determineMouseEnterLeave = function (e) {
-				//if the mouse just came off of the circle
-				if (mouseHover) {
-					//console.log ('trigger off');
-					//if the events list contains mouseout, trigger it
-					(/(mouseout)/.test(settings.events)) ? $circle.trigger(settings.eventPrefix + 'mouseout', [e]) : null;
-					//if the events list contains mouseleave, trigger it
-					(/(mouseleave)/.test(settings.events)) ? $circle.trigger(settings.eventPrefix + 'mouseleave', [e]) : null;
-				}
-				return false;
-			},
-			determineValidity = function (e) {
-				//get radius of circle and distance from cursor to center of cirlce
-				var height = $circle.height(),
-					width = $circle.width(),
-					offset = $circle.offset(),
-					radius = height/2 + settings.borderWidth + 5,
-					distance = Math.sqrt(
-						Math.pow((e.pageX - (offset.left + (width/2))), 2) + 
-						Math.pow((e.pageY - (offset.top + (height/2))), 2)
-					);
-				//console.log(height, radius + ', ' + distance); 
-				//if the distance between the cursor and the center is greater 
-				//than the length of the radius, then the cursor is not in the center
-				//else we are in the circle
-				return (distance > radius) ? false : true;
-			};
-		this.on(settings.events, function (e, eOrig) {
-			var eObj;
-			//console.log (e);
-			e.stopPropagation();
-			e.preventDefault();
-			//if this is a mouseenter or mouseover event
-			if (e.type == 'mouseenter' || e.type == 'mouseover') {
-				//console.log (e);
-				//then start tracking the mouse position
-				$circle.on('mousemove.track', {eObj: e, eType: e.type}, function (eTrack) {
-					//console.log (eTrack.data.eObj);
-					//if the mouse in a valid location
-					if (determineValidity(eTrack)) {
-						//console.log (eTrack.data.eType);
-						//if mouse was not previously on the circle
-						if (!mouseHover) {
-							//console.log ('trigger on: ' + settings.eventPrefix + eTrack.data.eType);
-							//if the events list contains mouseout, trigger it
-							(/(mouseover)/.test(settings.events)) ? 
-								$circle.trigger(settings.eventPrefix + 'mouseover', [eTrack.data.eType]) : null;
-							//if the events list contains mouseleave, trigger it
-							(/(mouseenter)/.test(settings.events)) ? 
-								$circle.trigger(settings.eventPrefix + 'mouseenter', [eTrack.data.eType]) : null;
-							//set mouseHover to true
-							mouseHover = true;
-						}
-					}
-					else {
-						//console.log ('off');
-						//check to see if mouseHover is true then set it to false
-						mouseHover = determineMouseEnterLeave(eTrack.data.eType);
-					}
-				});
-			}
-			//else if this is a mouseout or mouseleave event
-			else if (e.type == 'mouseleave' || e.type == 'mouseout') {
-				//unbind the mousemove tracker from the circle
-				$circle.off('mousemove.track');
-				//check to see if mouseHover is true then set it to false
-				mouseHover = determineMouseEnterLeave(e);
-			}
-			else {
-				//determine which event object to pass
-				eObj = (typeof eOrig == 'object' && eOrig != null) ? eOrig : e;
-				//if this is a valid event, trigger a custom event on the circle
-				if (determineValidity(e)) {
-					//console.log ('trigger custom');
-					$circle.trigger(settings.eventPrefix + e.type, [eObj]);
-				}
-				//else trigger a standard event on the element behind the circle
-				else {
-					//console.log ('trigger parent');
-					settings.$behindElement.trigger(e.type, [eObj]);
-				}
-			}
-		});
-			
-		return this;
-	}
+	
 
 })( jQuery );
