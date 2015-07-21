@@ -168,6 +168,8 @@
 				dragging = false;
 				lastMousePosition = null;
 			}
+		    //trigger a buttonup event (it's okay if no button was down)
+		    container.trigger('buttonup');
 		}).on('mousedown', function (evt) {
 			//if the element clicked was the view box or inside the view box
 			if (evt.target == container.get(0) || $(evt.target).parents().index(container) >= 0) {
@@ -291,8 +293,6 @@
                     container.trigger('buttondown', [r[0], r[1]]);
                 }
             }
-        }).on('mouseup', function (e) {
-            container.trigger('buttonup');
         });
 		
 	   //return this to maintain jquery chainability
