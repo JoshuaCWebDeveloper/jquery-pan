@@ -2,7 +2,9 @@
 // Author: Joshua Carter
 // Created: June 05, 2013
 
-(function( $ ){
+// pass window, document, and undefined to our code to 
+// improve minifying and avoid conflicts
+(function( $, window, document, undefined ){
 
     var getSize = function($element) {
         return {
@@ -350,4 +352,4 @@
        return this;
     }
 	
-})( jQuery );
+})( jQuery, window, document );
