@@ -278,10 +278,18 @@
             //if we have a stored direction for this control
             var d = $(this).data('jqp-control'), r;
             if (typeof d == "string") {
-                //then get movement ratio for our direction
-                r = getMoveRatio(d);
-                //then trigger button event on our container
-                container.trigger('buttondown', [r[0], r[1]]);
+                //if this is center control
+                if (d == 'center') {
+                    //then trigger a center event on our container
+                    container.trigger('center');
+                }
+                else {
+                    //else, it is a standard directional control, 
+                    //get movement ratio for our direction
+                    r = getMoveRatio(d);
+                    //then trigger button event on our container
+                    container.trigger('buttondown', [r[0], r[1]]);
+                }
             }
         }).on('mouseup', function (e) {
             container.trigger('buttonup');
