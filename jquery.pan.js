@@ -25,6 +25,18 @@
 					fps: 20,
 					interval: 10
 				},
+				controls: {
+                    'up': false,
+                    'up/right': false,
+                    'right': false,
+                    'down/right': false,
+                    'down': false,
+                    'down/left': false,
+                    'left': false,
+                    'up/left': false,
+                    'circle': false,
+                    'center': false
+				},
 				onPan: false
 			}, options),
 			//Container is element this plugin is applied to;
@@ -44,7 +56,8 @@
 			lastMousePosition = null,
 			movement = toCoords(0, 0),
 			focused = false,
-			continuous = {
+			$controls,
+            continuous = {
 				active: false,
 				'id': null,
 				keys: [37, 38, 39, 40, 65, 87, 68, 83],
@@ -131,7 +144,18 @@
 				updatePosition (movement.x, movement.y);
 			};
 							
-			
+		//set up controls
+        $controls = $();
+        for (c in settings.controls) {
+            //if we were given a control
+            if (settings.controls[c]) {
+                //store the controls assigned direction, and add it to $controls
+                $controls = $controls.add(
+                    $(settings.controls[c]).data('jqp-control', c)
+                );
+            }
+        }
+        	
 		$(document).on('mousemove', function(evt) {
 			if (dragging) {
 				evt.preventDefault();
@@ -248,6 +272,20 @@
 				);
 			}
 		});
+        
+        //handle events on controls
+        $controls.on('mousedown', function (e) {
+            //if we have a stored direction for this control
+            var d = $(this).data('jqp-control'), r;
+            if (typeof d == "string") {
+                //then get movement ratio for our direction
+                r = getMoveRatio(d);
+                //then trigger button event on our container
+                container.trigger('buttondown', [r[0], r[1]]);
+            }
+        }).on('mouseup', function (e) {
+            container.trigger('buttonup');
+        });
 		
 	   //return this to maintain jquery chainability
        return this;
