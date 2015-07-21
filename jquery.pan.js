@@ -56,7 +56,8 @@
 			lastMousePosition = null,
 			movement = toCoords(0, 0),
 			focused = false,
-			$controls,
+			circleActive = false,
+            $controls,
             continuous = {
 				active: false,
 				'id': null,
@@ -103,6 +104,30 @@
 				//set the vector
                 setVector(toCoords(r[0], r[1]));
             },
+			getCircleMoveRatio = function(e, $circle) {
+				var offset = $circle.offset(),
+					size = getSize($circle),
+					range = toCoords(
+						size.height / 2, 
+						size.width / 2
+					),
+					axis = toCoords(
+						offset.top + range.x, 
+						offset.left + range.y
+					),
+					s = toCoords(
+						(axis.y < e.pageX) ? 1 : -1,
+						(axis.x < e.pageY) ? 1 : -1
+					),
+					diff = toCoords(
+						Math.abs(axis.x - e.pageY),
+						Math.abs(axis.y - e.pageX)
+					);
+				return [
+					((diff.x > diff.y) ? diff.y/diff.x : 1) * s.x,
+					((diff.y > diff.x) ? diff.x/diff.y : 1) * s.y
+				];
+			},
 			refreshOffset = function () {
 				offset = toCoords(
 					Number(content.css('left').replace('px', '')) | 0,
@@ -157,17 +182,32 @@
         }
         	
 		$(document).on('mousemove', function(evt) {
-			if (dragging) {
-				evt.preventDefault();
+			//if special functionality will be executed
+            if (dragging || circleActive)
+                evt.preventDefault();
+            //if our content is being drug by the mouse
+            if (dragging) {
 				mousePosition.x = evt.pageX - container.offset().left;
 				mousePosition.y = evt.pageY - container.offset().top;
 				mouseMove();
+			}
+            //if a circle control is active
+            if (circleActive) {
+				//determine our new movement ratio
+                move = getCircleMoveRatio(evt, circleActive);
+                //trigger a buttonchange event on our container
+				container.trigger('buttonchange', [move[0], move[1]]);
 			}
 		}).on('mouseup', function(evt) {
 			if (dragging) {	
 				dragging = false;
 				lastMousePosition = null;
 			}
+            //if a circle control is currently active
+            if (circleActive) {
+                //make it not active
+                circleActive = false;
+            }
 		    //trigger a buttonup event (it's okay if no button was down)
 		    container.trigger('buttonup');
 		}).on('mousedown', function (evt) {
@@ -277,13 +317,25 @@
         //handle events on controls
         $controls.on('mousedown', function (e) {
             //if we have a stored direction for this control
-            var d = $(this).data('jqp-control'), r;
+            var $this = $(this),
+                d = $this.data('jqp-control'), 
+                r;
             if (typeof d == "string") {
                 //if this is center control
                 if (d == 'center') {
                     //then trigger a center event on our container
                     container.trigger('center');
                 }
+                //else if this is a circle control
+                else if (d == 'circle') {
+                     //if the target wasn't another control (like a center button)
+                     if (e.target == this || !$controls.is(e.target)) {
+                        //store our circle element in a jQuery object
+                        circleActive = $this;
+                        move = getCircleMoveRatio(e, circleActive);
+                        container.trigger('buttondown', [move[0], move[1]]);
+                    }
+			    }
                 else {
                     //else, it is a standard directional control, 
                     //get movement ratio for our direction
@@ -298,78 +350,4 @@
        return this;
     }
 	
-	$.fn.panCircle = function (arg1) {
-		//create options
-		var options = (typeof arg1 == 'object' && arg1 !== null) ? arg1 : {},
-			$circle = this,
-			move = toCoords(0, 0),
-			settings = $.extend(true, {
-				$panContainer: this.parent(),
-				center: {
-					enabled: true,
-					$button: $('#circle-center')
-				},
-				$eventStarter: $('<div style="visibility: none" id="circle-event-starter"></div>').appendTo($circle.parent())
-			}, options),
-			active = false,
-			determineMove = function(e) {
-				var offset = $circle.offset(),
-					size = getSize($circle),
-					range = toCoords(
-						size.height / 2, 
-						size.width / 2
-					),
-					axis = toCoords(
-						offset.top + range.x, 
-						offset.left + range.y
-					),
-					s = toCoords(
-						(axis.y < e.pageX) ? 1 : -1,
-						(axis.x < e.pageY) ? 1 : -1
-					),
-					diff = toCoords(
-						Math.abs(axis.x - e.pageY),
-						Math.abs(axis.y - e.pageX)
-					);
-				return {
-					x: ((diff.x > diff.y) ? diff.y/diff.x : 1) * s.x,
-					y: ((diff.y > diff.x) ? diff.x/diff.y : 1) * s.y
-				};
-			};
-		$(document).on('mousemove', function (e) {
-			if (active) {
-				e.preventDefault();
-				move = determineMove(e);
-				settings.$panContainer.trigger('buttonchange', [move.x, move.y]);
-			}
-		}).on('mouseup', function(e) {
-			//console.log ('mouseup');
-			if (active) {
-				active = false;
-			}
-			settings.$panContainer.trigger('buttonup');
-		});
-		
-		this.on('mousedown', function (e) {
-			e.preventDefault();
-			//trigger the standard event on a safe element so that it still bubbles up
-			settings.$eventStarter.trigger('mousedown'); 
-			//if the target was not the center button or if center is disabled
-			if (!settings.center.enabled || e.target != settings.center.$button.get(0)) {
-				active = true;
-				move = determineMove(e);
-				settings.$panContainer.trigger('buttondown', [move.x, move.y]);
-			}
-			else {
-				//then center is enabled and the target was the button, so center the content
-				settings.$panContainer.trigger('center');
-			}
-		});
-		
-		
-		return this;
-	}
-	
-	
-
 })( jQuery );
