@@ -63,19 +63,33 @@
 				continuous.moveX = settings.continuous.interval * moveRatio.x,
 				continuous.moveY = settings.continuous.interval * moveRatio.y;
 			},
-			//take a direction (e.g. 'up' or 'right') and use it to set a vector
+            //take a direction (e.g. 'up' or 'right') and use it to return a movement ratio
+			getMoveRatio = function (d) {
+                var directions = {
+                        'up': 		  [0, -1],
+                        'up/right':   [.5, -.5],
+                        'right': 	  [1, 0],
+                        'down/right': [.5, .5],
+                        'down':       [0, 1],
+                        'down/left':  [-.5, .5],
+                        'left':       [-1, 0],
+                        'up/left':    [-.5, -.5]
+                    };
+                //if we received a valid direction
+                if (d in directions) {
+                    //return the associated ration
+                    return directions[d];
+                }
+                //if something went wrong, return 0 (will result in no movement)
+                return [0, 0];
+            },
+            //take a direction (e.g. 'up' or 'right') and use it to set a vector
 			setDirection = function (d) {
-				var ratio;
-				if (d == 'up')
-					ratio = toCoords(0, -1);
-				if (d == 'right')
-					ratio = toCoords(1, 0);
-				if (d == 'down')
-					ratio = toCoords(0, 1);
-				if (d == 'left')
-					ratio = toCoords(-1, 0);
-				setVector(ratio);	
-			},
+				//get the movement ratio for this direction
+                var r = getMoveRatio(d);
+				//set the vector
+                setVector(toCoords(r[0], r[1]));
+            },
 			refreshOffset = function () {
 				offset = toCoords(
 					Number(content.css('left').replace('px', '')) | 0,
