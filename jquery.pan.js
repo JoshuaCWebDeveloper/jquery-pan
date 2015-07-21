@@ -233,8 +233,7 @@
 			continuous.active = true;
 			continuous.move();
 		}).on('buttonchange', function(evt, moveX, moveY) {
-			continuous.moveX = settings.continuous.interval * moveX;
-			continuous.moveY = settings.continuous.interval * moveY;
+            setVector(toCoords(moveX, moveY));
 		}).on('buttonup', function (evt) {
 			continuous.active = false;
 		}).on('mousedown', function(evt) {
