@@ -270,6 +270,8 @@
                 if (plugin.continuous.active) {
                     evt.preventDefault();
                     plugin.continuous.active = false;
+                    clearTimeout(plugin.continuous.id);
+                    plugin.continuous.id = false;
                 }
             });
             
