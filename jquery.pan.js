@@ -60,6 +60,16 @@
         this.circleActive = false;
         this.continuous = {
             active: false,
+            directions: {
+                'up': 		  [0, -1],
+                'up/right':   [.5, -.5],
+                'right': 	  [1, 0],
+                'down/right': [.5, .5],
+                'down':       [0, 1],
+                'down/left':  [-.5, .5],
+                'left':       [-1, 0],
+                'up/left':    [-.5, -.5]
+            },
             'id': null,
             keys: [37, 38, 39, 40, 65, 87, 68, 83],
             moveX: 0,
@@ -89,20 +99,10 @@
         },
         //take a direction (e.g. 'up' or 'right') and use it to return a movement ratio
         getMoveRatio: function (d) {
-            var directions = {
-                    'up': 		  [0, -1],
-                    'up/right':   [.5, -.5],
-                    'right': 	  [1, 0],
-                    'down/right': [.5, .5],
-                    'down':       [0, 1],
-                    'down/left':  [-.5, .5],
-                    'left':       [-1, 0],
-                    'up/left':    [-.5, -.5]
-                };
             //if we received a valid direction
-            if (d in directions) {
+            if (d in this.continuous.directions) {
                 //return the associated ration
-                return directions[d];
+                return this.continuous.directions[d];
             }
             //if something went wrong, return 0 (will result in no movement)
             return [0, 0];
