@@ -183,14 +183,14 @@
                 this.lastMousePosition = toCoords(this.mousePosition.x, this.mousePosition.y);    
             }
     
-            movement = toCoords(
+            this.movement = toCoords(
                 this.mousePosition.x - this.lastMousePosition.x,
                 this.mousePosition.y - this.lastMousePosition.y
             );
     
             this.lastMousePosition = toCoords(this.mousePosition.x, this.mousePosition.y);
             
-            this.updatePosition (movement.x, movement.y);
+            this.updatePosition (this.movement.x, this.movement.y);
         },
         //method to setup our plugin
         init: function () {
