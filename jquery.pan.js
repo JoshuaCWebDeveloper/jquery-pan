@@ -229,8 +229,8 @@
                 if (plugin.circleActive) {
                     //determine our new movement ratio
                     move = plugin.getCircleMoveRatio(evt, plugin.circleActive);
-                    //trigger a buttonchange event on our container
-                    plugin.container.trigger('buttonchange', [move[0], move[1]]);
+                    //trigger a controlchange event on our container
+                    plugin.container.trigger('controlchange', [move[0], move[1]]);
                 }
             }).on('mouseup', function(evt) {
                 if (plugin.dragging) {	
@@ -242,8 +242,8 @@
                     //make it not active
                     plugin.circleActive = false;
                 }
-                //trigger a buttonup event (it's okay if no button was down)
-                plugin.container.trigger('buttonup');
+                //trigger a controlup event (it's okay if no control was down)
+                plugin.container.trigger('controlup');
             }).on('mousedown', function (evt) {
                 //if the element clicked was the view box or inside the view box
                 if (evt.target == plugin.container.get(0) || $(evt.target).parents().index(plugin.container) >= 0) {
@@ -302,16 +302,20 @@
             });
             */
             
-            plugin.container.on('buttondown', function(evt, moveX, moveY) {
-                plugin.setVector(toCoords(moveX, moveY));
+            plugin.container.on('controldown', function(evt, a, b) {
+                //use set control to set a vector
+                plugin.setControl(a, b);
                 //refresh the offset before we start panning
                 plugin.refreshOffset();
                 plugin.continuous.active = true;
                 plugin.continuous.move();
-            }).on('buttonchange', function(evt, moveX, moveY) {
-                plugin.setVector(toCoords(moveX, moveY));
-            }).on('buttonup', function (evt) {
+            }).on('controlchange', function(evt, a, b) {
+                //use set control to set a vector
+                plugin.setControl(a, b);
+            }).on('controlup', function (evt) {
                 plugin.continuous.active = false;
+                clearTimeout(plugin.continuous.id);
+                plugin.continuous.id = false;
             }).on('mousedown', function(evt) {
                 if (evt.target == plugin.container.get(0) 
                     || evt.target == plugin.content.get(0) 
@@ -368,16 +372,16 @@
                          if (e.target == this || !plugin.$controls.is(e.target)) {
                             //store our circle element in a jQuery object
                             plugin.circleActive = $this;
+                            //get a movement ratio from our mouse location on the circle
                             move = plugin.getCircleMoveRatio(e, plugin.circleActive);
-                            plugin.container.trigger('buttondown', [move[0], move[1]]);
+                            //trigger a controldown event
+                            plugin.container.trigger('controldown', [move[0], move[1]]);
                         }
                     }
                     else {
                         //else, it is a standard directional control, 
-                        //get movement ratio for our direction
-                        r = plugin.getMoveRatio(d);
-                        //then trigger button event on our container
-                        plugin.container.trigger('buttondown', [r[0], r[1]]);
+                        //trigger control event on our container
+                        plugin.container.trigger('controldown', [d]);
                     }
                 }
             });
