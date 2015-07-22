@@ -112,13 +112,6 @@
             //if something went wrong, return 0 (will result in no movement)
             return [0, 0];
         },
-        //take a direction (e.g. 'up' or 'right') and use it to set a vector
-        setDirection: function (d) {
-            //get the movement ratio for this direction
-            var r = this.getMoveRatio(d);
-            //set the vector
-            this.setVector(toCoords(r[0], r[1]));
-        },
         getCircleMoveRatio: function(e, $circle) {
             var offset = $circle.offset(),
                 size = getSize($circle),
