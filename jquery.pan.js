@@ -143,6 +143,22 @@
                 ((diff.y > diff.x) ? diff.x/diff.y : 1) * s.y
             ];
         },
+        //sets a vector using either a direction with an optional speed, or a movement ratio
+        setControl: function (a, b) {
+            //if we received a direction
+            if (a in this.continuous.directions) {
+                //get a movement ratio for our direction
+                r = this.getMoveRatio(a);
+                //validate possible speed
+                speed = (b > 0) ? b : undefined;
+                //set the vector
+                this.setVector(toCoords(r[0], r[1]), speed);       
+            }
+            else {
+                //assume we received a movement ratio
+                this.setVector(toCoords(a, b));
+            }
+        },
         refreshOffset: function () {
             this.offset = toCoords(
                 Number(this.content.css('left').replace('px', '')) | 0,
