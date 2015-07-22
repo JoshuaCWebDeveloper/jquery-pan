@@ -261,6 +261,7 @@
                     }
                 }
             }).on('keydown', function (evt) {
+                var d;
                 //if the view box is "focused" (non-technical)
                 //and they key pressed is in the array of continuousKeys
                 if (plugin.focused && plugin.continuous.keys.indexOf(evt.which) >= 0) {
@@ -270,29 +271,24 @@
                     if (!plugin.continuous.active) {
                         //determine movement directions based on key (left, up, right, down)
                         if (evt.which == 37 || evt.which == 65) {
-                            plugin.setDirection('left');
+                            d = 'left';
                         }
                         else if (evt.which == 38 || evt.which == 87) {
-                            plugin.setDirection('up');
+                            d = 'up';
                         }
                         else if (evt.which == 39 || evt.which == 68) {
-                            plugin.setDirection('right');
+                            d = 'right';
                         }
                         else if (evt.which == 40 || evt.which == 83) {
-                            plugin.setDirection('down')
+                            d = 'down';
                         }
-                        //refresh the offset before we start panning
-                        plugin.refreshOffset();
-                        plugin.continuous.active = true;
-                        plugin.continuous.move();
+                        plugin.container.trigger("controldown", [d]);
                     }
                 }
             }).on('keyup', function (evt) {
                 if (plugin.continuous.active) {
                     evt.preventDefault();
-                    plugin.continuous.active = false;
-                    clearTimeout(plugin.continuous.id);
-                    plugin.continuous.id = false;
+                    plugin.container.trigger("controlup");
                 }
             });
             
