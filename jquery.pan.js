@@ -93,9 +93,14 @@
     // add methods to our plugin's prototype
     $.extend(Plugin.prototype, {
         //take a movement ratio and multiply by our speed to get a vector
-        setVector: function (moveRatio) {
-            this.continuous.moveX = this.settings.continuous.interval * moveRatio.x;
-            this.continuous.moveY = this.settings.continuous.interval * moveRatio.y;
+        setVector: function (moveRatio, speed) {
+            //if we didn't receive a speed
+            if (typeof speed == "undefined") {
+                //use the default speed
+                speed = this.settings.continuous.interval
+            }
+            this.continuous.moveX = speed * moveRatio.x;
+            this.continuous.moveY = speed * moveRatio.y;
         },
         //take a direction (e.g. 'up' or 'right') and use it to return a movement ratio
         getMoveRatio: function (d) {
