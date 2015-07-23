@@ -22,10 +22,7 @@
         this.settings = $.extend(true, {
             centerSelector: '#center',
             content: element.children(':first'),
-            continuous: {
-                fps: 20,
-                interval: 10
-            },
+            fps: 20,
             controls: {
                 'up': false,
                 'up/right': false,
@@ -38,7 +35,8 @@
                 'circle': false,
                 'center': false
             },
-            onPan: false
+            onPan: false,
+            speed: 200
         }, options);
         //Container is element this plugin is applied to;
         //we're panning it's child element: content
