@@ -55,7 +55,6 @@
         this.mousePosition = toCoords(0, 0);
         this.dragging = false;
         this.lastMousePosition = null;
-        this.movement = toCoords(0, 0);
         this.focused = false;
         
         this.init();
@@ -322,14 +321,14 @@
                 this.lastMousePosition = toCoords(this.mousePosition.x, this.mousePosition.y);    
             }
     
-            this.movement = toCoords(
+            movement = toCoords(
                 this.mousePosition.x - this.lastMousePosition.x,
                 this.mousePosition.y - this.lastMousePosition.y
             );
     
             this.lastMousePosition = toCoords(this.mousePosition.x, this.mousePosition.y);
             
-            this.updatePosition (this.movement.x, this.movement.y);
+            this.updatePosition (movement.x, movement.y);
         },
         //method to setup our plugin
         init: function () {
