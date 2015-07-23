@@ -42,6 +42,8 @@
         //we're panning it's child element: content
         this.container = element;
         this.content = this.settings.content;
+        //create dragger object to handle drag functionality
+        this.dragger = new Dragger(this);
         //create controls object to handle pan controls
         this.controls = new Controls(this);
         //initialize variables
@@ -51,10 +53,6 @@
             Number(this.content.css('left').replace('px', '')) | 0,
             Number(this.content.css('top').replace('px', ''))  | 0
         );
-        //Mouse state variables, set by bound mouse events below
-        this.mousePosition = toCoords(0, 0);
-        this.dragging = false;
-        this.lastMousePosition = null;
         this.focused = false;
         
         this.init();
@@ -109,6 +107,15 @@
         //private properties to store the state of the control
         this._active = false; 
         this._current = null; 
+    },
+    //create constructor for basic mouse pan functionality
+    Dragger = function (plugin) {
+        //set a reference to our plugin
+        this.plugin = plugin;
+        //private properties, to store the state of drag functionality
+        this._mousePosition = toCoords(0, 0);
+        this._dragging = false;
+        this._lastMousePosition = null;
     };
     
     //add methods to the controls prototype
@@ -288,6 +295,53 @@
         }
     });
     
+    // add methods to the Dragger prototype
+    $.extend(Dragger.prototype, {
+        //determines if content is currently being drug
+        isDragging: function () {
+            return this._dragging;    
+        },
+        //updates the mouse position
+        updateMousePosition: function (evt) {
+            //make position relative to container
+            this._mousePosition = toCoords(
+                evt.pageX - this.plugin.container.offset().left, 
+                evt.pageY - this.plugin.container.offset().top
+            );
+        },
+        //moves the content based on how much the mouse has moved
+        mouseMove: function() {
+            //if we have no lastMousePosition
+            if(this._lastMousePosition == null) {
+                //initialize it to our current position
+                this._lastMousePosition = toCoords(this._mousePosition.x, this._mousePosition.y);    
+            }
+            //determine movement based on how much our mouse has moved
+            movement = toCoords(
+                this._mousePosition.x - this._lastMousePosition.x,
+                this._mousePosition.y - this._lastMousePosition.y
+            );
+            //update lastMousePosition to our current position
+            this._lastMousePosition = toCoords(this._mousePosition.x, this._mousePosition.y);
+            //move the content
+            this.plugin.updatePosition (movement.x, movement.y);
+        },
+        //toggles dragging on
+        start: function () {
+            //refresh the offset before we start panning
+            this.plugin.refreshOffset();
+            //indicate we are now dragging
+            this._dragging = true;
+        },
+        //toggles dragging off
+        stop: function () {
+            //erase lastMousePosition
+            this._lastMousePosition = null;
+            //indicate we are no longer dragging
+            this._dragging = false;
+        }
+    });
+    
     // add methods to our plugin's prototype
     $.extend(Plugin.prototype, {
         refreshOffset: function () {
@@ -316,20 +370,6 @@
                 this.settings.onPan(x, y, offset.x, offset.y);
             }
         },
-        mouseMove: function() {
-            if(this.lastMousePosition == null) {
-                this.lastMousePosition = toCoords(this.mousePosition.x, this.mousePosition.y);    
-            }
-    
-            movement = toCoords(
-                this.mousePosition.x - this.lastMousePosition.x,
-                this.mousePosition.y - this.lastMousePosition.y
-            );
-    
-            this.lastMousePosition = toCoords(this.mousePosition.x, this.mousePosition.y);
-            
-            this.updatePosition (movement.x, movement.y);
-        },
         //method to setup our plugin
         init: function () {
             //create reference to our plugin
@@ -337,22 +377,24 @@
                 
             $(document).on('mousemove', function(evt) {
                 //if special functionality will be executed
-                if (plugin.dragging || plugin.controls.circles.isActive())
+                if (plugin.dragger.isDragging() || plugin.controls.circles.isActive())
                     evt.preventDefault();
                 //if our content is being drug by the mouse
-                if (plugin.dragging) {
-                    plugin.mousePosition.x = evt.pageX - plugin.container.offset().left;
-                    plugin.mousePosition.y = evt.pageY - plugin.container.offset().top;
-                    plugin.mouseMove();
+                if (plugin.dragger.isDragging()) {
+                    //update the mouse position
+                    plugin.dragger.updateMousePosition(evt);
+                    //move the content
+                    plugin.dragger.mouseMove();
                 }
                 //if a circle control is active
                 if (plugin.controls.circles.isActive()) {
                     plugin.controls.circles.update(evt);
                 }
             }).on('mouseup', function(evt) {
-                if (plugin.dragging) {	
-                    plugin.dragging = false;
-                    plugin.lastMousePosition = null;
+                //if we are currently dragger
+                if (plugin.dragger.isDragging()) {	
+                    //stop dragging
+                    plugin.dragger.stop();
                 }
                 //if a circle control is currently active
                 if (plugin.controls.circles.isActive()) {
@@ -420,9 +462,8 @@
                     || evt.target == plugin.content.get(0) 
                     || $(evt.target).parents().index(plugin.content) >= 0) {
                         evt.preventDefault();
-                        //refresh the offset before we start panning
-                        plugin.refreshOffset();
-                        plugin.dragging = true;
+                        //enable dragging
+                        plugin.dragger.start();
                 }
             }).on('center', function() {
                 //find the center element
