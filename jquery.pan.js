@@ -42,6 +42,8 @@
         //we're panning it's child element: content
         this.container = element;
         this.content = this.settings.content;
+        //create controls object to handle pan controls
+        this.controls = new Controls(this);
         //initialize variables
         //Precalculate the limits of panning - offset stores
         //the current amount of pan throughout
@@ -55,63 +57,196 @@
         this.lastMousePosition = null;
         this.movement = toCoords(0, 0);
         this.focused = false;
-        this.circleActive = false;
-        this.continuous = {
-            active: false,
-            directions: {
-                'up': 		  [0, -1],
-                'up/right':   [.5, -.5],
-                'right': 	  [1, 0],
-                'down/right': [.5, .5],
-                'down':       [0, 1],
-                'down/left':  [-.5, .5],
-                'left':       [-1, 0],
-                'up/left':    [-.5, -.5]
-            },
-            'id': null,
-            keys: [37, 38, 39, 40, 65, 87, 68, 83],
-            moveX: 0,
-            moveY: 0,
-            plugin: this,
-            speed: 1000 / this.settings.continuous.fps,
-            move: function () {
-                //create reference to this for callback
-                self = this;
-                //if we are active
-                if (this.active) {
-                    this.plugin.updatePosition (this.moveX, this.moveY);
-                    this.id = setTimeout (function(){self.move();}, this.speed, this.moveX, this.moveY);
-                }
-            }
+        
+        this.init();
+    },
+    //create constructor for controls
+    Controls = function (plugin) {
+        //set a reference to our plugin
+        this.plugin = plugin;
+        //create a circles object for circle controls
+        this.circles = new Circles(this);
+        //create jQuery object to store controls
+        this.$jQ = $();
+        //private properties to store state of controls
+        this._active = false;
+        this._activeId = false;
+        this._vector = toCoords(0, 0);
+        //private properties to store static info
+        //amount of time each frame lasts (for timers)
+        this._frameLength = 1000/plugin.settings.fps;
+        //amount content moves each frame
+        this._frameMove = plugin.settings.speed/plugin.settings.fps;
+        //private properties to store control maps
+        //directions that controls can move content and their movement ratios
+        this._directions = {
+            'up': 		  [0, -1],
+            'up/right':   [.5, -.5],
+            'right': 	  [1, 0],
+            'down/right': [.5, .5],
+            'down':       [0, 1],
+            'down/left':  [-.5, .5],
+            'left':       [-1, 0],
+            'up/left':    [-.5, -.5]
+        };
+        //keys (jQuery key ids) that can move content and their directions
+        this._keys = {
+            37: 'left',
+            65: 'left', 
+            38: 'up',
+            87: 'up', 
+            39: 'right',
+            68: 'right', 
+            40: 'down',
+            83: 'down'
         };
         
         this.init();
+    },
+    //create constructor for special circle controls
+    Circles = function (controls) {
+        //set a refernce to our controls
+        this.controls = controls;
+        //private properties to store the state of the control
+        this._active = false; 
+        this._current = null; 
     };
     
-    // add methods to our plugin's prototype
-    $.extend(Plugin.prototype, {
+    //add methods to the controls prototype
+    $.extend(Controls.prototype, {
+        //checks if a controls is active
+        isActive: function () {
+            return this._active;    
+        },
+        //checks if a jQury key id is a control key
+        validKey: function (eWhich) {
+            return (eWhich in this._keys);
+        },
+        //takes a jQuery control element and returns the assigned control type
+        getControlType: function ($control) {
+            var d = $control.data('jqp-control');
+            //if we have a valid control type
+            if (typeof d == "string" && d in this.plugin.settings.controls) {
+                return d;
+            }
+            //if we couldn't find a valid direction or type, return false
+            return false;
+        },
         //take a movement ratio and multiply by our speed to get a vector
         setVector: function (moveRatio, speed) {
-            //if we didn't receive a speed
-            if (typeof speed == "undefined") {
-                //use the default speed
-                speed = this.settings.continuous.interval
+            //if we received a speed
+            if (typeof speed != "undefined") {
+                //determine our frame movement using this new speed
+                frmmv = speed/this.plugin.settings.fps;
             }
-            this.continuous.moveX = speed * moveRatio.x;
-            this.continuous.moveY = speed * moveRatio.y;
+            else {
+                //use our default speed
+                frmmv = this._frameMove;
+            }
+            //set our vector
+            this._vector = toCoords(frmmv*moveRatio.x, frmmv*moveRatio.y);
         },
         //take a direction (e.g. 'up' or 'right') and use it to return a movement ratio
         getMoveRatio: function (d) {
             //if we received a valid direction
-            if (d in this.continuous.directions) {
-                //return the associated ration
-                return this.continuous.directions[d];
+            if (d in this._directions) {
+                //return the associated ratio
+                return this._directions[d];
             }
             //if something went wrong, return 0 (will result in no movement)
             return [0, 0];
         },
-        getCircleMoveRatio: function(e, $circle) {
-            var offset = $circle.offset(),
+        //sets a vector using either a direction with an optional speed, or a movement ratio
+        setControl: function (a, b) {
+            //if we received a direction
+            if (a in this._directions) {
+                //get a movement ratio for our direction
+                r = this.getMoveRatio(a);
+                //validate possible speed
+                speed = (b > 0) ? b : undefined;
+                //set the vector
+                this.setVector(toCoords(r[0], r[1]), speed);       
+            }
+            else {
+                //assume we received a movement ratio
+                this.setVector(toCoords(a, b));
+            }
+        },
+        _frameLoop: function () {
+            //create reference to this for callback
+            var self = this;
+            //if we are active
+            if (this.isActive()) {
+                this.plugin.updatePosition (this._vector.x, this._vector.y);
+                this._activeId = setTimeout (function(){self._frameLoop();}, this._frameLength);
+            }
+        },
+        //starts moving the content
+        move: function () {
+            //refresh the offset before we start panning
+            this.plugin.refreshOffset();
+            //indicate that a control is now active
+            this._active = true;
+            //start the loop
+            this._frameLoop();
+        },
+        stop: function () {
+            //if we have an active control
+            if (this.isActive()) {
+                //indicate that no control is now active
+                this._active = false;
+                //clear any remaining frames from the loop
+                clearTimeout(this._activeId);
+                this._activeId = false;
+            }
+        },
+        //takes a jQuery key id and uses it to execute a control
+        handleKey: function (eWhich) {
+            //if we have a valid key
+            if (this.validKey(eWhich)) {
+                //trigger a controldown event using our key's direction
+                this.plugin.container.trigger("controldown", [this._keys[eWhich]]);
+            }
+        },
+        
+        //set up controls
+        init: function () {
+            //loop through the defined controls in our plugin's settings
+            for (c in this.plugin.settings.controls) {
+                //if we were given a control
+                if (this.plugin.settings.controls[c]) {
+                    //store the control's assigned direction or type, and add it
+                    this.$jQ = this.$jQ.add(
+                        $(this.plugin.settings.controls[c]).data('jqp-control', c)
+                    );
+                }
+            }
+        }
+    });
+    
+    //add methods to the circles prototpye
+    $.extend(Circles.prototype, {
+        //checks if a circle control is active
+        isActive: function () {
+            return this._active;    
+        },
+        //set's a circle control as the currently active control
+        setActive: function($circle) {
+            //indicate a circle control is active
+            this._active = true;
+            //set the passed jQuery circle control as the active circle
+            this._current = $circle;
+        },
+        //unset the currently active control
+        unsetActive: function() {
+            //indicate there is no active circle control
+            this._active = false;
+            this._current = null;  
+        },
+        //get a movement ratio based on the cursor's location on the circle control
+        getMoveRatio: function(e) {
+            var $circle = this._current,
+                offset = $circle.offset(),
                 size = getSize($circle),
                 range = toCoords(
                     size.height / 2, 
@@ -134,22 +269,28 @@
                 ((diff.y > diff.x) ? diff.x/diff.y : 1) * s.y
             ];
         },
-        //sets a vector using either a direction with an optional speed, or a movement ratio
-        setControl: function (a, b) {
-            //if we received a direction
-            if (a in this.continuous.directions) {
-                //get a movement ratio for our direction
-                r = this.getMoveRatio(a);
-                //validate possible speed
-                speed = (b > 0) ? b : undefined;
-                //set the vector
-                this.setVector(toCoords(r[0], r[1]), speed);       
-            }
-            else {
-                //assume we received a movement ratio
-                this.setVector(toCoords(a, b));
+        //handles the use of a circle control
+        handleCircle: function (evt, element) {
+            //if the target wasn't another control (like a center button)
+            if (evt.target == element || !this.controls.$jQ.is(evt.target)) {
+                //set our circle control as active
+                this.setActive($(element));
+                //get a movement ratio from our mouse location on the circle
+                move = this.getMoveRatio(evt);
+                //trigger a controldown event
+                this.controls.plugin.container.trigger('controldown', [move[0], move[1]]);
             }
         },
+        update: function (evt) {
+            //determine our new movement ratio
+            move = this.getMoveRatio(evt);
+            //trigger a controlchange event on our container
+            this.controls.plugin.container.trigger('controlchange', [move[0], move[1]]);
+        }
+    });
+    
+    // add methods to our plugin's prototype
+    $.extend(Plugin.prototype, {
         refreshOffset: function () {
             this.offset = toCoords(
                 Number(this.content.css('left').replace('px', '')) | 0,
@@ -194,21 +335,10 @@
         init: function () {
             //create reference to our plugin
             var plugin = this;
-            //set up controls
-            plugin.$controls = $();
-            for (c in plugin.settings.controls) {
-                //if we were given a control
-                if (plugin.settings.controls[c]) {
-                    //store the controls assigned direction, and add it to $controls
-                    plugin.$controls = plugin.$controls.add(
-                        $(plugin.settings.controls[c]).data('jqp-control', c)
-                    );
-                }
-            }
                 
             $(document).on('mousemove', function(evt) {
                 //if special functionality will be executed
-                if (plugin.dragging || plugin.circleActive)
+                if (plugin.dragging || plugin.controls.circles.isActive())
                     evt.preventDefault();
                 //if our content is being drug by the mouse
                 if (plugin.dragging) {
@@ -217,11 +347,8 @@
                     plugin.mouseMove();
                 }
                 //if a circle control is active
-                if (plugin.circleActive) {
-                    //determine our new movement ratio
-                    move = plugin.getCircleMoveRatio(evt, plugin.circleActive);
-                    //trigger a controlchange event on our container
-                    plugin.container.trigger('controlchange', [move[0], move[1]]);
+                if (plugin.controls.circles.isActive()) {
+                    plugin.controls.circles.update(evt);
                 }
             }).on('mouseup', function(evt) {
                 if (plugin.dragging) {	
@@ -229,9 +356,9 @@
                     plugin.lastMousePosition = null;
                 }
                 //if a circle control is currently active
-                if (plugin.circleActive) {
+                if (plugin.controls.circles.isActive()) {
                     //make it not active
-                    plugin.circleActive = false;
+                    plugin.controls.circles.unsetActive();
                 }
                 //trigger a controlup event (it's okay if no control was down)
                 plugin.container.trigger('controlup');
@@ -252,33 +379,22 @@
                     }
                 }
             }).on('keydown', function (evt) {
-                var d;
                 //if the view box is "focused" (non-technical)
-                //and they key pressed is in the array of continuousKeys
-                if (plugin.focused && plugin.continuous.keys.indexOf(evt.which) >= 0) {
+                //and they key pressed is a control key
+                if (plugin.focused && plugin.controls.validKey(evt.which)) {
                     evt.preventDefault();
                     //keydown will repeatedly fire when key is held
-                    //if continous movement is not active (meaning this is the first keydown event)
-                    if (!plugin.continuous.active) {
-                        //determine movement directions based on key (left, up, right, down)
-                        if (evt.which == 37 || evt.which == 65) {
-                            d = 'left';
-                        }
-                        else if (evt.which == 38 || evt.which == 87) {
-                            d = 'up';
-                        }
-                        else if (evt.which == 39 || evt.which == 68) {
-                            d = 'right';
-                        }
-                        else if (evt.which == 40 || evt.which == 83) {
-                            d = 'down';
-                        }
-                        plugin.container.trigger("controldown", [d]);
+                    //if control movement is not active (meaning this is the first keydown event)
+                    if (!plugin.controls.isActive()) {
+                        //handle the key and send controldown event
+                        plugin.controls.handleKey(evt.which);
                     }
                 }
             }).on('keyup', function (evt) {
-                if (plugin.continuous.active) {
+                //if there is an active control
+                if (plugin.controls.isActive()) {
                     evt.preventDefault();
+                    //stop it
                     plugin.container.trigger("controlup");
                 }
             });
@@ -291,18 +407,15 @@
             
             plugin.container.on('controldown', function(evt, a, b) {
                 //use set control to set a vector
-                plugin.setControl(a, b);
-                //refresh the offset before we start panning
-                plugin.refreshOffset();
-                plugin.continuous.active = true;
-                plugin.continuous.move();
+                plugin.controls.setControl(a, b);
+                //start our controlled move
+                plugin.controls.move();
             }).on('controlchange', function(evt, a, b) {
                 //use set control to set a vector
-                plugin.setControl(a, b);
+                plugin.controls.setControl(a, b);
             }).on('controlup', function (evt) {
-                plugin.continuous.active = false;
-                clearTimeout(plugin.continuous.id);
-                plugin.continuous.id = false;
+                //stop our controlled move
+                plugin.controls.stop();
             }).on('mousedown', function(evt) {
                 if (evt.target == plugin.container.get(0) 
                     || evt.target == plugin.content.get(0) 
@@ -342,12 +455,11 @@
             });
             
             //handle events on controls
-            plugin.$controls.on('mousedown', function (e) {
+            plugin.controls.$jQ.on('mousedown', function (e) {
                 //if we have a stored direction for this control
-                var $this = $(this),
-                    d = $this.data('jqp-control'), 
+                var d = plugin.controls.getControlType($(this)), 
                     r;
-                if (typeof d == "string") {
+                if (d) {
                     //if this is center control
                     if (d == 'center') {
                         //then trigger a center event on our container
@@ -355,15 +467,8 @@
                     }
                     //else if this is a circle control
                     else if (d == 'circle') {
-                         //if the target wasn't another control (like a center button)
-                         if (e.target == this || !plugin.$controls.is(e.target)) {
-                            //store our circle element in a jQuery object
-                            plugin.circleActive = $this;
-                            //get a movement ratio from our mouse location on the circle
-                            move = plugin.getCircleMoveRatio(e, plugin.circleActive);
-                            //trigger a controldown event
-                            plugin.container.trigger('controldown', [move[0], move[1]]);
-                        }
+                         //handle the circle and send a controldown event
+                         plugin.controls.circles.handleCircle(e, this);
                     }
                     else {
                         //else, it is a standard directional control, 
