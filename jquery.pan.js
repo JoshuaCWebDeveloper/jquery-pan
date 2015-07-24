@@ -52,8 +52,6 @@
         //create controls object to handle pan controls
         this.controls = new Controls(this);
         //initialize variables
-        //Precalculate the limits of panning - offset stores
-        //the current amount of pan throughout
         this._offset = this.refreshOffset();
         this.focused = false;
         
