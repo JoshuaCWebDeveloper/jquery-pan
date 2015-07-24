@@ -376,6 +376,50 @@
                 this.settings.onPan(x, y, offset.x, offset.y);
             }
         },
+        //centers the content in the container
+        center: function () {
+            //find the center element
+            var $centerElement = $(this.settings.contentCenter),
+                //calculate center of container (view box) relative to itself
+                cs = getSize(this.container),
+                containerCenter = toCoords(cs.width/2, cs.height/2), 
+                //calculate the position of the content relative to the container
+                co = this.container.offset(),
+                cno = this.content.offset(),
+                contentOffset = {
+                    left: cno.left-co.left, 
+                    top: cno.top-co.top
+                },
+                ces, ceo, contentCenter;
+            //if a center element was found
+            if ($centerElement.length > 0) {
+                //get the first element in the center element object (should only be one)
+                $centerElement = $centerElement.eq(0);
+                //calculate center of center element relative to the content
+                ces = getSize($centerElement);
+                ceo = $centerElement.offset();
+                contentCenter = toCoords(
+                    (ceo.left - cno.left + (ces.width/2)),
+                    (ceo.top - cno.top + (ces.height/2))
+                );
+            }
+            else {
+                //calculate the center of the content relative to itself using its dimentions
+                ces = getSize(this.content);
+                contentCenter = toCoords(ces.width/2, ces.height/2);  
+            }
+            //make the content center relative to the container (instead of content)
+            contentCenter.x += contentOffset.left;
+            contentCenter.y += contentOffset.top;
+            //refresh the offset before we update the offset
+            this.refreshOffset();
+            //calculate the difference between the two centers and use it to update the content's offset
+            this.updatePosition(
+                containerCenter.x - contentCenter.x,
+                containerCenter.y - contentCenter.y,
+                true
+            );
+        },
         //method to setup our plugin
         init: function () {
             //create reference to our plugin
@@ -472,32 +516,8 @@
                         plugin.dragger.start();
                 }
             }).on('center', function() {
-                //find the center element
-                var $centerElement = $(plugin.settings.centerSelector),
-                    containerCenter, contentCenter;
-                //if a center element was found
-                if ($centerElement.length > 0) {
-                    //get the first element in the center element object (should only be one)
-                    $centerElement = $centerElement.eq(0);
-                    //calculate center of container (view box) relative to itself
-                    containerCenter = toCoords(
-                        getSize(plugin.container).width/2,
-                        getSize(plugin.container).height/2
-                    ),
-                    //calculate center of center element relative to the container
-                    contentCenter = toCoords(
-                        ($centerElement.offset().left - plugin.container.offset().left + ($centerElement.width()/2)),
-                        ($centerElement.offset().top - plugin.container.offset().top + ($centerElement.height()/2))
-                    );
-                    //refresh the offset before we update the offset
-                    plugin.refreshOffset();
-                    //calculate the difference between the two centers and use it to update the content's offset
-                    plugin.updatePosition(
-                        containerCenter.x - contentCenter.x,
-                        containerCenter.y - contentCenter.y,
-                        true
-                    );
-                }
+                //center our content
+                plugin.center();
             });
             
             //handle events on controls
