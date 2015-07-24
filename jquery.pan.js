@@ -549,10 +549,18 @@
 	$.fn[pluginName] = function(arg1) {
 	    //create options
 		var options = (typeof arg1 == 'object' && arg1 !== null) ? arg1 : {};
-		//create plugin
-        new Plugin (this, options);
+		//loop through the elements this plugin was called on
         //return this to maintain jQuery chainability
-        return this;
+        return this.each(function () {
+            var $this = $(this);
+            //if a plugin of the same name has NOT 
+            //already been initialized for the current element
+            if (!$this.data("plugin_" + pluginName)) {
+                //create plugin for the current element and store in data
+                $this.data("plugin_" + pluginName, new Plugin ($this, options));
+            }
+        });     
     };
+
 	
 })( jQuery, window, document );
