@@ -305,7 +305,7 @@
             return this._dragging;    
         },
         //updates the mouse position
-        updateMousePosition: function (evt) {
+        _updateMousePosition: function (evt) {
             //make position relative to container
             this._mousePosition = toCoords(
                 evt.pageX - this.plugin.container.offset().left, 
@@ -313,8 +313,10 @@
             );
         },
         //moves the content based on how much the mouse has moved
-        mouseMove: function() {
+        mouseMove: function(evt) {
             var movement;
+            //update our current mouse position
+            this._updateMousePosition(evt);
             //if we have no lastMousePosition
             if(this._lastMousePosition == null) {
                 //initialize it to our current position
@@ -429,10 +431,8 @@
                     evt.preventDefault();
                 //if our content is being drug by the mouse
                 if (plugin.dragger.isDragging()) {
-                    //update the mouse position
-                    plugin.dragger.updateMousePosition(evt);
                     //move the content
-                    plugin.dragger.mouseMove();
+                    plugin.dragger.mouseMove(evt);
                 }
                 //if a circle control is active
                 if (plugin.controls.circles.isActive()) {
