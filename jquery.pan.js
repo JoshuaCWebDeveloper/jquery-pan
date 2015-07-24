@@ -19,6 +19,9 @@
         return {'x': x, 'y': y};
     };
     
+    //define name of plugin (static)
+    var pluginName = "pan";
+        
     //create constructor for our plugin
     var Plugin = function ($element, options) {
         //define defaults
@@ -543,7 +546,7 @@
         }
     });
 							
-	$.fn.pan = function(arg1) {
+	$.fn[pluginName] = function(arg1) {
 	    //create options
 		var options = (typeof arg1 == 'object' && arg1 !== null) ? arg1 : {};
 		//create plugin
