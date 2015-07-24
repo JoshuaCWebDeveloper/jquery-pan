@@ -8,14 +8,14 @@
     
     "use strict";
     
+    //utility functions
     var getSize = function($element) {
         return {
             'width': $element.width(), 
             'height': $element.height()
         };
-    };
-
-    var toCoords = function(x, y) {
+    },
+    toCoords = function(x, y) {
         return {'x': x, 'y': y};
     };
     
