@@ -51,10 +51,7 @@
         //initialize variables
         //Precalculate the limits of panning - offset stores
         //the current amount of pan throughout
-        this.offset = toCoords(
-            Number(this.content.css('left').replace('px', '')) | 0,
-            Number(this.content.css('top').replace('px', ''))  | 0
-        );
+        this.offset = this.refreshOffset();
         this.focused = false;
         
         this.init();
