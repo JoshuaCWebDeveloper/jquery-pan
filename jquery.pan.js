@@ -21,7 +21,8 @@
     
     //create constructor for our plugin
     var Plugin = function (element, options) {
-        this.settings = $.extend(true, {
+        //define defaults
+        this._defaults = {
             centerSelector: '#center',
             content: element.children(':first'),
             fps: 20,
@@ -39,7 +40,9 @@
             },
             onPan: false,
             speed: 200
-        }, options);
+        };
+        //get settings from defaults and options
+        this.settings = $.extend(true, {}, this._defaults, options);
         //Container is element this plugin is applied to;
         //we're panning it's child element: content
         this.container = element;
