@@ -23,8 +23,8 @@
     var Plugin = function (element, options) {
         //define defaults
         this._defaults = {
-            centerSelector: '#center',
             content: element.children(':first'),
+            contentCenter: '#content-center',
             fps: 20,
             controls: {
                 'up': false,
