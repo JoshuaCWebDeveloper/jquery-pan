@@ -5,7 +5,9 @@
 // pass window, document, and undefined to our code to 
 // improve minifying and avoid conflicts
 (function( $, window, document, undefined ){
-
+    
+    "use strict";
+    
     var getSize = function($element) {
         return {
             'width': $element.width(), 
@@ -140,6 +142,7 @@
         },
         //take a movement ratio and multiply by our speed to get a vector
         setVector: function (moveRatio, speed) {
+            var frmmv;
             //if we received a speed
             if (typeof speed != "undefined") {
                 //determine our frame movement using this new speed
@@ -164,6 +167,7 @@
         },
         //sets a vector using either a direction with an optional speed, or a movement ratio
         setControl: function (a, b) {
+            var speed, r;
             //if we received a direction
             if (a in this._directions) {
                 //get a movement ratio for our direction
@@ -218,7 +222,7 @@
         //set up controls
         init: function () {
             //loop through the defined controls in our plugin's settings
-            for (c in this.plugin.settings.controls) {
+            for (var c in this.plugin.settings.controls) {
                 //if we were given a control
                 if (this.plugin.settings.controls[c]) {
                     //store the control's assigned direction or type, and add it
@@ -277,6 +281,7 @@
         },
         //handles the use of a circle control
         handleCircle: function (evt, element) {
+            var move;
             //if the target wasn't another control (like a center button)
             if (evt.target == element || !this.controls.$jQ.is(evt.target)) {
                 //set our circle control as active
@@ -289,7 +294,7 @@
         },
         update: function (evt) {
             //determine our new movement ratio
-            move = this.getMoveRatio(evt);
+            var move = this.getMoveRatio(evt);
             //trigger a controlchange event on our container
             this.controls.plugin.container.trigger('controlchange', [move[0], move[1]]);
         }
@@ -311,6 +316,7 @@
         },
         //moves the content based on how much the mouse has moved
         mouseMove: function() {
+            var movement;
             //if we have no lastMousePosition
             if(this._lastMousePosition == null) {
                 //initialize it to our current position
@@ -497,8 +503,7 @@
             //handle events on controls
             plugin.controls.$jQ.on('mousedown', function (e) {
                 //if we have a stored direction for this control
-                var d = plugin.controls.getControlType($(this)), 
-                    r;
+                var d = plugin.controls.getControlType($(this));
                 if (d) {
                     //if this is center control
                     if (d == 'center') {
