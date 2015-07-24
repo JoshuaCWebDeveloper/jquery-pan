@@ -54,7 +54,7 @@
         //initialize variables
         //Precalculate the limits of panning - offset stores
         //the current amount of pan throughout
-        this.offset = this.refreshOffset();
+        this._offset = this.refreshOffset();
         this.focused = false;
         
         this.init();
@@ -351,7 +351,7 @@
     // add methods to our plugin's prototype
     $.extend(Plugin.prototype, {
         refreshOffset: function () {
-            this.offset = toCoords(
+            this._offset = toCoords(
                 Number(this.content.css('left').replace('px', '')) | 0,
                 Number(this.content.css('top').replace('px', ''))  | 0
             );
@@ -359,14 +359,14 @@
         updatePosition: function (x, y, animate) {
             var animate = (typeof animate != 'undefined') ? animate : false,
                 newCss;
-            this.offset.x += x;
-            this.offset.y += y;
+            this._offset.x += x;
+            this._offset.y += y;
             
             //Finally, update the position of the content
             //with our carefully calculated value
             newCss = {
-                left: this.offset.x + "px",
-                top: this.offset.y + "px"
+                left: this._offset.x + "px",
+                top: this._offset.y + "px"
             };
             //determine whether to animate position change or not
             (animate) ? this.content.animate(newCss, 500) : this.content.css(newCss);
