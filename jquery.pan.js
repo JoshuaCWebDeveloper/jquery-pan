@@ -20,10 +20,10 @@
     };
     
     //create constructor for our plugin
-    var Plugin = function (element, options) {
+    var Plugin = function ($element, options) {
         //define defaults
         this._defaults = {
-            content: element.children(':first'),
+            content: $element.children(':first'),
             contentCenter: '#content-center',
             fps: 20,
             controls: {
@@ -45,7 +45,7 @@
         this.settings = $.extend(true, {}, this._defaults, options);
         //Container is element this plugin is applied to;
         //we're panning it's child element: content
-        this.container = element;
+        this.container = $element;
         this.content = this.settings.content;
         //create dragger object to handle drag functionality
         this.dragger = new Dragger(this);
