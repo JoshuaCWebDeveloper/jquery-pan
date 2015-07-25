@@ -1,4 +1,4 @@
-// jQuery.pan v0.1
+// jQuery.pan v0.1.0
 // Author: Joshua Carter
 // Created: June 05, 2013
 
